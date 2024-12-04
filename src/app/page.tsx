@@ -6,6 +6,14 @@ import ChessGame from "@/lib/chess";
 import { Button } from "@/components/ui/button";
 import { Square } from "chess.js";
 import { stockfish } from "@/lib/stockfish";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { ChessBoard } from "@/components/chess/ChessBoard";
+import { GameInfo } from "@/components/chess/GameInfo";
+import { CapturedPieces } from "@/components/chess/CapturedPieces";
+import { MoveHistory } from "@/components/chess/MoveHistory";
+import { GameControls } from "@/components/chess/GameControls";
 
 export default function Home() {
   const [game] = useState(() => new ChessGame());
@@ -51,72 +59,43 @@ export default function Home() {
   }, [game, handlePieceDrop]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4">
-      <h1 className="text-4xl font-bold mb-8">Xadrez e Puzzles</h1>
+    <div className="container flex flex-col h-screen p-4 m-auto">
+      <h1 className="text-3xl font-bold text-center mb-4">Xadrez e Puzzles</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-6xl">
-        <div className="flex flex-col">
-          <Chessboard
-            position={fen}
-            onPieceDrop={handlePieceDrop}
-            boardWidth={480}
-            customBoardStyle={{
-              borderRadius: "4px",
-              boxShadow: "0 2px 10px rgba(0, 0, 0, 0.5)",
-            }}
+      <div className="flex flex-1 gap-4 min-h-0">
+        <div className="flex flex-col w-[800px] gap-4">
+          <ChessBoard fen={fen} onPieceDrop={handlePieceDrop} />
+
+          <div className="grid grid-cols-3 gap-4">
+            <GameInfo
+              turn={game.turn()}
+              isCheck={gameState.isCheck}
+              isCheckmate={gameState.isCheckmate}
+              isDraw={gameState.isDraw}
+            />
+
+            <CapturedPieces
+              whitePieces={gameState.capturedPieces.white}
+              blackPieces={gameState.capturedPieces.black}
+            />
+
+            <MoveHistory moves={gameState.moveHistory} />
+          </div>
+
+          <GameControls
+            onComputerMove={handleComputerMove}
+            onResetGame={resetGame}
           />
         </div>
 
-        <div className="flex flex-col gap-4">
-          <div className="bg-white p-4 rounded-lg shadow">
-            <h2 className="text-xl font-bold mb-2">Estado do Jogo</h2>
-            <div className="space-y-2">
-              <p>Turno: {game.turn() === "w" ? "Brancas" : "Pretas"}</p>
-              {gameState.isCheck && <p className="text-red-500">Xeque!</p>}
-              {gameState.isCheckmate && (
-                <p className="text-red-600 font-bold">Xeque-mate!</p>
-              )}
-              {gameState.isDraw && <p className="text-blue-600">Empate!</p>}
-            </div>
-          </div>
-
-          <div className="bg-white p-4 rounded-lg shadow">
-            <h2 className="text-xl font-bold mb-2">Peças Capturadas</h2>
-            <div className="flex gap-4">
-              <div>
-                <h3 className="font-semibold">Brancas</h3>
-                <p>{gameState.capturedPieces.white.join(" ")}</p>
-              </div>
-              <div>
-                <h3 className="font-semibold">Pretas</h3>
-                <p>{gameState.capturedPieces.black.join(" ")}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-4 rounded-lg shadow">
-            <h2 className="text-xl font-bold mb-2">Histórico de Movimentos</h2>
-            <div className="max-h-40 overflow-y-auto">
-              {gameState.moveHistory.map((move, index) => (
-                <span key={index} className="mr-2">
-                  {index + 1}. {move}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <Button
-            onClick={handleComputerMove}
-            className="w-full"
-            variant="secondary"
-          >
-            Jogada do Computador
-          </Button>
-
-          <Button onClick={resetGame} className="w-full" variant="destructive">
-            Reiniciar Jogo
-          </Button>
-        </div>
+        <Card className="flex-1">
+          <CardHeader>
+            <CardTitle>Chat (Em breve)</CardTitle>
+          </CardHeader>
+          <CardContent className="h-full bg-muted/10">
+            {/* Área reservada para o futuro chat */}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
