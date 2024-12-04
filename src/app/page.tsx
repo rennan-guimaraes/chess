@@ -1,15 +1,21 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Chessboard } from "react-chessboard";
 import ChessGame from "@/lib/chess";
 import { Button } from "@/components/ui/button";
 import { Square } from "chess.js";
+import { stockfish } from "@/lib/stockfish";
 
 export default function Home() {
   const [game] = useState(() => new ChessGame());
   const [fen, setFen] = useState(game.fen());
   const [gameState, setGameState] = useState(game.getGameState());
+
+  useEffect(() => {
+    stockfish.initialize();
+    return () => stockfish.destroy();
+  }, []);
 
   const handlePieceDrop = useCallback(
     (sourceSquare: string, targetSquare: string) => {
@@ -34,6 +40,15 @@ export default function Home() {
     setFen(game.fen());
     setGameState(game.getGameState());
   }, [game]);
+
+  const handleComputerMove = useCallback(() => {
+    stockfish.getBestMove(game.fen(), 15, (bestMove) => {
+      const from = bestMove.slice(0, 2) as Square;
+      const to = bestMove.slice(2, 4) as Square;
+
+      handlePieceDrop(from, to);
+    });
+  }, [game, handlePieceDrop]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4">
@@ -89,6 +104,14 @@ export default function Home() {
               ))}
             </div>
           </div>
+
+          <Button
+            onClick={handleComputerMove}
+            className="w-full"
+            variant="secondary"
+          >
+            Jogada do Computador
+          </Button>
 
           <Button onClick={resetGame} className="w-full" variant="destructive">
             Reiniciar Jogo
