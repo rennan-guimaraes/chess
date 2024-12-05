@@ -1,14 +1,10 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { Chessboard } from "react-chessboard";
 import ChessGame from "@/lib/chess";
-import { Button } from "@/components/ui/button";
 import { Square } from "chess.js";
 import { stockfish } from "@/lib/stockfish";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChessBoard } from "@/components/chess/ChessBoard";
 import { GameInfo } from "@/components/chess/GameInfo";
 import { CapturedPieces } from "@/components/chess/CapturedPieces";

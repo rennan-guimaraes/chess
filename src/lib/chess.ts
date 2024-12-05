@@ -1,4 +1,4 @@
-import { Chess, Square, PieceSymbol } from "chess.js";
+import { Chess, Square } from "chess.js";
 
 interface ChessMove {
   from: Square;

@@ -1,6 +1,6 @@
 declare global {
   interface Window {
-    Stockfish: any;
+    Stockfish: unknown;
   }
 }
 
