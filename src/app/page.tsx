@@ -14,7 +14,6 @@ import { GameInfo } from "@/components/chess/GameInfo";
 import { CapturedPieces } from "@/components/chess/CapturedPieces";
 import { MoveHistory } from "@/components/chess/MoveHistory";
 import { GameControls } from "@/components/chess/GameControls";
-
 export default function Home() {
   const [game] = useState(() => new ChessGame());
   const [fen, setFen] = useState(game.fen());
