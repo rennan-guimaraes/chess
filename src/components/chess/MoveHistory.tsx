@@ -8,7 +8,7 @@ interface MoveHistoryProps {
 
 export function MoveHistory({ moves }: MoveHistoryProps) {
   return (
-    <Card>
+    <Card className="h-full">
       <CardHeader className="p-4 pb-2">
         <CardTitle className="text-lg">Movimentos</CardTitle>
       </CardHeader>

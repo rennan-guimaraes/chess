@@ -55,38 +55,37 @@ export default function Home() {
 
   return (
     <main className="h-full">
-      <div className="container flex flex-col h-full p-4 max-w-[1400px]">
+      <div className="flex flex-col h-full p-4 w-full">
         <h1 className="text-3xl font-bold text-center mb-4">
           Xadrez e Puzzles
         </h1>
 
-        <div className="flex flex-1 gap-4 min-h-0 overflow-hidden">
-          <div className="flex flex-col w-[800px] gap-4">
-            <ChessBoard fen={fen} onPieceDrop={handlePieceDrop} />
-
+        <div className="grid grid-cols-3 gap-4 min-h-0 overflow-hidden">
+          <div className="flex flex-col gap-4 col-span-2">
             <div className="grid grid-cols-3 gap-4">
+              <div className="col-span-2 w-full">
+                <ChessBoard fen={fen} onPieceDrop={handlePieceDrop} />
+              </div>
+              <div className="flex flex-col gap-4 col-span-1 h-full">
+                <MoveHistory moves={gameState.moveHistory} />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
               <GameInfo
                 turn={game.turn()}
                 isCheck={gameState.isCheck}
                 isCheckmate={gameState.isCheckmate}
                 isDraw={gameState.isDraw}
               />
-
               <CapturedPieces
                 whitePieces={gameState.capturedPieces.white}
                 blackPieces={gameState.capturedPieces.black}
               />
-
-              <MoveHistory moves={gameState.moveHistory} />
             </div>
-
-            <GameControls
-              onComputerMove={handleComputerMove}
-              onResetGame={resetGame}
-            />
           </div>
 
-          <Card className="flex-1">
+          <Card className="col-span-1">
             <CardHeader>
               <CardTitle>Chat (Em breve)</CardTitle>
             </CardHeader>
@@ -94,6 +93,12 @@ export default function Home() {
               {/* Área reservada para o futuro chat */}
             </CardContent>
           </Card>
+        </div>
+        <div className="mt-2 justify-end">
+          <GameControls
+            onComputerMove={handleComputerMove}
+            onResetGame={resetGame}
+          />
         </div>
       </div>
     </main>

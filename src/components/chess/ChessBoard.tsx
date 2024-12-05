@@ -8,16 +8,18 @@ interface ChessBoardProps {
 
 export function ChessBoard({ fen, onPieceDrop }: ChessBoardProps) {
   return (
-    <Card className="p-4 m-auto">
-      <Chessboard
-        position={fen}
-        onPieceDrop={onPieceDrop}
-        boardWidth={660}
-        customBoardStyle={{
-          borderRadius: "8px",
-          boxShadow: "0 2px 10px rgba(0, 0, 0, 0.1)",
-        }}
-      />
+    <Card className="p-4 flex justify-center items-center w-full">
+      <div className="max-w-[660px] w-full">
+        <Chessboard
+          position={fen}
+          onPieceDrop={onPieceDrop}
+          boardWidth={660}
+          customBoardStyle={{
+            borderRadius: "8px",
+            boxShadow: "0 2px 10px rgba(0, 0, 0, 0.1)",
+          }}
+        />
+      </div>
     </Card>
   );
 }
