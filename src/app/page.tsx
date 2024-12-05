@@ -10,19 +10,41 @@ import { GameInfo } from "@/components/chess/GameInfo";
 import { CapturedPieces } from "@/components/chess/CapturedPieces";
 import { MoveHistory } from "@/components/chess/MoveHistory";
 import { GameControls } from "@/components/chess/GameControls";
+
 export default function Home() {
   const [game] = useState(() => new ChessGame());
   const [fen, setFen] = useState(game.fen());
   const [gameState, setGameState] = useState(game.getGameState());
-  const [difficulty, setDifficulty] = useState(15);
+  const [difficulty, setDifficulty] = useState(5);
+  const [isComputerEnabled, setIsComputerEnabled] = useState(false);
+  const [isComputerTurn, setIsComputerTurn] = useState(false);
 
   useEffect(() => {
     stockfish.initialize();
     return () => stockfish.destroy();
   }, []);
 
+  useEffect(() => {
+    if (
+      isComputerEnabled &&
+      isComputerTurn &&
+      !gameState.isCheckmate &&
+      !gameState.isDraw
+    ) {
+      handleComputerMove();
+    }
+  }, [
+    isComputerEnabled,
+    isComputerTurn,
+    gameState.isCheckmate,
+    gameState.isDraw,
+  ]);
+
   const handlePieceDrop = useCallback(
     (sourceSquare: string, targetSquare: string) => {
+      // Se for a vez do computador, não permitir movimento
+      if (isComputerTurn) return false;
+
       const moveSuccess = game.move({
         from: sourceSquare as Square,
         to: targetSquare as Square,
@@ -32,17 +54,24 @@ export default function Home() {
       if (moveSuccess) {
         setFen(game.fen());
         setGameState(game.getGameState());
+
+        // Se o jogo contra computador estiver ativado, definir como vez do computador
+        if (isComputerEnabled) {
+          setIsComputerTurn(true);
+        }
+
         return true;
       }
       return false;
     },
-    [game]
+    [game, isComputerEnabled, isComputerTurn]
   );
 
   const resetGame = useCallback(() => {
     game.reset();
     setFen(game.fen());
     setGameState(game.getGameState());
+    setIsComputerTurn(false);
   }, [game]);
 
   const handleComputerMove = useCallback(() => {
@@ -50,9 +79,24 @@ export default function Home() {
       const from = bestMove.slice(0, 2) as Square;
       const to = bestMove.slice(2, 4) as Square;
 
-      handlePieceDrop(from, to);
+      const moveSuccess = game.move({
+        from,
+        to,
+        promotion: "q",
+      });
+
+      if (moveSuccess) {
+        setFen(game.fen());
+        setGameState(game.getGameState());
+        setIsComputerTurn(false);
+      }
     });
-  }, [game, handlePieceDrop, difficulty]);
+  }, [game, difficulty]);
+
+  const toggleComputer = useCallback(() => {
+    setIsComputerEnabled((prev) => !prev);
+    setIsComputerTurn(false);
+  }, []);
 
   return (
     <main className="h-full">
@@ -68,6 +112,14 @@ export default function Home() {
                 <ChessBoard fen={fen} onPieceDrop={handlePieceDrop} />
               </div>
               <div className="flex flex-col gap-4 col-span-1 h-full">
+                <GameControls
+                  difficulty={difficulty}
+                  onDifficultyChange={setDifficulty}
+                  onComputerMove={handleComputerMove}
+                  onReset={resetGame}
+                  isComputerEnabled={isComputerEnabled}
+                  onToggleComputer={toggleComputer}
+                />
                 <MoveHistory moves={gameState.moveHistory} />
               </div>
             </div>
@@ -94,14 +146,6 @@ export default function Home() {
               {/* Área reservada para o futuro chat */}
             </CardContent>
           </Card>
-        </div>
-        <div className="mt-2 justify-end">
-          <GameControls
-            onComputerMove={handleComputerMove}
-            onResetGame={resetGame}
-            difficulty={difficulty}
-            onDifficultyChange={setDifficulty}
-          />
         </div>
       </div>
     </main>
