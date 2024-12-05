@@ -40,10 +40,26 @@ export default function Home() {
     gameState.isDraw,
   ]);
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "ArrowLeft") {
+        handlePreviousMove();
+      } else if (event.key === "ArrowRight") {
+        handleNextMove();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   const handlePieceDrop = useCallback(
     (sourceSquare: string, targetSquare: string) => {
-      // Se for a vez do computador, não permitir movimento
-      if (isComputerTurn) return false;
+      if (
+        isComputerTurn ||
+        game.getCurrentMoveIndex() < game.getTotalMoves() - 1
+      )
+        return false;
 
       const moveSuccess = game.move({
         from: sourceSquare as Square,
@@ -55,7 +71,6 @@ export default function Home() {
         setFen(game.fen());
         setGameState(game.getGameState());
 
-        // Se o jogo contra computador estiver ativado, definir como vez do computador
         if (isComputerEnabled) {
           setIsComputerTurn(true);
         }
@@ -98,6 +113,30 @@ export default function Home() {
     setIsComputerTurn(false);
   }, []);
 
+  const handleMoveSelect = useCallback(
+    (moveIndex: number) => {
+      if (game.goToMove(moveIndex)) {
+        setFen(game.fen());
+        setGameState(game.getGameState());
+      }
+    },
+    [game]
+  );
+
+  const handleNextMove = useCallback(() => {
+    if (game.goToNextMove()) {
+      setFen(game.fen());
+      setGameState(game.getGameState());
+    }
+  }, [game]);
+
+  const handlePreviousMove = useCallback(() => {
+    if (game.goToPreviousMove()) {
+      setFen(game.fen());
+      setGameState(game.getGameState());
+    }
+  }, [game]);
+
   return (
     <main className="h-full">
       <div className="flex flex-col h-full p-4 w-full">
@@ -120,7 +159,11 @@ export default function Home() {
                   isComputerEnabled={isComputerEnabled}
                   onToggleComputer={toggleComputer}
                 />
-                <MoveHistory moves={gameState.moveHistory} />
+                <MoveHistory
+                  moves={gameState.moveHistory}
+                  currentMoveIndex={gameState.currentMoveIndex}
+                  onMoveSelect={handleMoveSelect}
+                />
               </div>
             </div>
 
