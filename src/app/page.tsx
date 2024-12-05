@@ -14,6 +14,7 @@ export default function Home() {
   const [game] = useState(() => new ChessGame());
   const [fen, setFen] = useState(game.fen());
   const [gameState, setGameState] = useState(game.getGameState());
+  const [difficulty, setDifficulty] = useState(15);
 
   useEffect(() => {
     stockfish.initialize();
@@ -45,13 +46,13 @@ export default function Home() {
   }, [game]);
 
   const handleComputerMove = useCallback(() => {
-    stockfish.getBestMove(game.fen(), 15, (bestMove) => {
+    stockfish.getBestMove(game.fen(), difficulty, (bestMove) => {
       const from = bestMove.slice(0, 2) as Square;
       const to = bestMove.slice(2, 4) as Square;
 
       handlePieceDrop(from, to);
     });
-  }, [game, handlePieceDrop]);
+  }, [game, handlePieceDrop, difficulty]);
 
   return (
     <main className="h-full">
@@ -98,6 +99,8 @@ export default function Home() {
           <GameControls
             onComputerMove={handleComputerMove}
             onResetGame={resetGame}
+            difficulty={difficulty}
+            onDifficultyChange={setDifficulty}
           />
         </div>
       </div>
