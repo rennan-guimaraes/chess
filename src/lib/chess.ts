@@ -110,6 +110,14 @@ class ChessGame {
     this.capturedPieces = { white: [], black: [] };
   }
 
+  public loadPosition(fen: string): void {
+    this.game.load(fen);
+    this.moveHistory = [];
+    this.positionHistory = [this.game.fen()];
+    this.currentMoveIndex = -1;
+    this.capturedPieces = { white: [], black: [] };
+  }
+
   public isValidMove(from: Square, to: Square): boolean {
     const moves = this.game.moves({ verbose: true });
     return moves.some((move) => move.from === from && move.to === to);

@@ -9,6 +9,7 @@ const geistSans = localFont({
   variable: "--font-geist-sans",
   weight: "100 900",
 });
+
 const geistMono = localFont({
   src: "./fonts/GeistMonoVF.woff",
   variable: "--font-geist-mono",
@@ -17,14 +18,14 @@ const geistMono = localFont({
 
 export const metadata: Metadata = {
   title: "Xadrez e Puzzles",
-  description: "Jogue xadrez e resolva puzzles",
+  description: "Jogue xadrez e resolva puzzles para melhorar suas habilidades",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body

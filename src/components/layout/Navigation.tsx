@@ -4,9 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, GraduationCap } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ThemeToggle } from "../theme/ThemeToggle";
 
-export function Sidebar() {
+export function Navigation() {
   const pathname = usePathname();
 
   const links = [
@@ -23,9 +22,9 @@ export function Sidebar() {
   ];
 
   return (
-    <aside className="w-[60px] border-r flex flex-col items-center py-4 bg-background">
-      <nav className="flex-1">
-        <ul className="flex flex-col gap-4">
+    <nav className="fixed bottom-0 left-0 right-0 bg-background border-t">
+      <div className="container flex justify-center items-center h-16">
+        <ul className="flex gap-8">
           {links.map((link) => {
             const Icon = link.icon;
             return (
@@ -33,21 +32,18 @@ export function Sidebar() {
                 <Link
                   href={link.href}
                   className={cn(
-                    "flex flex-col items-center gap-1 p-2 rounded-md hover:bg-accent transition-colors",
-                    pathname === link.href && "bg-accent"
+                    "flex flex-col items-center gap-1 text-muted-foreground hover:text-foreground transition-colors",
+                    pathname === link.href && "text-foreground"
                   )}
-                  title={link.label}
                 >
                   <Icon className="h-6 w-6" />
+                  <span className="text-xs">{link.label}</span>
                 </Link>
               </li>
             );
           })}
         </ul>
-      </nav>
-      <div className="mt-auto">
-        <ThemeToggle />
       </div>
-    </aside>
+    </nav>
   );
 }
