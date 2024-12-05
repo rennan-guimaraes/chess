@@ -28,7 +28,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased h-screen overflow-hidden`}
       >
         <ThemeProvider
           attribute="class"
@@ -36,9 +36,9 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <div className="flex">
+          <div className="flex h-full">
             <Sidebar />
-            <main className="flex-1">{children}</main>
+            <div className="flex-1 overflow-hidden">{children}</div>
           </div>
         </ThemeProvider>
       </body>

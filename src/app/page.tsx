@@ -54,44 +54,48 @@ export default function Home() {
   }, [game, handlePieceDrop]);
 
   return (
-    <div className="container flex flex-col h-screen p-4 m-auto">
-      <h1 className="text-3xl font-bold text-center mb-4">Xadrez e Puzzles</h1>
+    <main className="h-full">
+      <div className="container flex flex-col h-full p-4 max-w-[1400px]">
+        <h1 className="text-3xl font-bold text-center mb-4">
+          Xadrez e Puzzles
+        </h1>
 
-      <div className="flex flex-1 gap-4 min-h-0">
-        <div className="flex flex-col w-[800px] gap-4">
-          <ChessBoard fen={fen} onPieceDrop={handlePieceDrop} />
+        <div className="flex flex-1 gap-4 min-h-0 overflow-hidden">
+          <div className="flex flex-col w-[800px] gap-4">
+            <ChessBoard fen={fen} onPieceDrop={handlePieceDrop} />
 
-          <div className="grid grid-cols-3 gap-4">
-            <GameInfo
-              turn={game.turn()}
-              isCheck={gameState.isCheck}
-              isCheckmate={gameState.isCheckmate}
-              isDraw={gameState.isDraw}
+            <div className="grid grid-cols-3 gap-4">
+              <GameInfo
+                turn={game.turn()}
+                isCheck={gameState.isCheck}
+                isCheckmate={gameState.isCheckmate}
+                isDraw={gameState.isDraw}
+              />
+
+              <CapturedPieces
+                whitePieces={gameState.capturedPieces.white}
+                blackPieces={gameState.capturedPieces.black}
+              />
+
+              <MoveHistory moves={gameState.moveHistory} />
+            </div>
+
+            <GameControls
+              onComputerMove={handleComputerMove}
+              onResetGame={resetGame}
             />
-
-            <CapturedPieces
-              whitePieces={gameState.capturedPieces.white}
-              blackPieces={gameState.capturedPieces.black}
-            />
-
-            <MoveHistory moves={gameState.moveHistory} />
           </div>
 
-          <GameControls
-            onComputerMove={handleComputerMove}
-            onResetGame={resetGame}
-          />
+          <Card className="flex-1">
+            <CardHeader>
+              <CardTitle>Chat (Em breve)</CardTitle>
+            </CardHeader>
+            <CardContent className="h-full bg-muted/10">
+              {/* Área reservada para o futuro chat */}
+            </CardContent>
+          </Card>
         </div>
-
-        <Card className="flex-1">
-          <CardHeader>
-            <CardTitle>Chat (Em breve)</CardTitle>
-          </CardHeader>
-          <CardContent className="h-full bg-muted/10">
-            {/* Área reservada para o futuro chat */}
-          </CardContent>
-        </Card>
       </div>
-    </div>
+    </main>
   );
 }
