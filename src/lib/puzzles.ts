@@ -1,88 +1,135 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import puzzlesData from "@/data/puzzles.json";
+import ChessGame from "./chess";
 
-interface Puzzle {
-  id: string;
-  fen: string;
-  moves: string[];
-  rating: number;
+export interface Puzzle {
+  PuzzleId: string;
+  FEN: string;
+  Moves: string;
+  Rating: number;
   theme: string;
-  description: string;
+  Description: string;
 }
 
-interface UserProgress {
+export interface UserProgress {
   rating: number;
   solvedPuzzles: Set<string>;
   currentStreak: number;
   bestStreak: number;
   totalSolved: number;
+  currentLevel: Level;
+  currentPuzzleIndex: number;
 }
 
-// Puzzles de exemplo (podemos expandir isso muito mais)
-const puzzles: Puzzle[] = [
-  {
-    id: "mate-in-1-basic",
-    fen: "r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 0 1",
-    moves: ["h5f7"],
-    rating: 800,
-    theme: "mate-in-one",
-    description: "Mate em 1 - Básico",
-  },
-  {
-    id: "mate-in-2-basic",
-    fen: "r1b1kb1r/pppp1ppp/2n2n2/4p3/2B1P3/3P4/PPP2PPP/RNBQK1NR w KQkq - 0 1",
-    moves: ["d1h5", "h5f7"],
-    rating: 1000,
-    theme: "mate-in-two",
-    description: "Mate em 2 - Intermediário",
-  },
-  {
-    id: "pin-tactic",
-    fen: "rnbqkbnr/ppp2ppp/8/3pp3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 1",
-    moves: ["f3e5"],
-    rating: 1200,
-    theme: "pin",
-    description: "Alfinete Tático",
-  },
-];
+interface LevelInfo {
+  rating_min: number;
+  rating_max: number;
+  total_puzzles: number;
+}
+
+interface PuzzleLevel {
+  info: LevelInfo;
+  puzzles: Puzzle[];
+}
+
+const LEVELS = [
+  "iniciante_1",
+  "iniciante_2",
+  "iniciante_3",
+  "intermediario_1",
+  "intermediario_2",
+  "intermediario_3",
+  "avancado_1",
+  "avancado_2",
+  "avancado_3",
+] as const;
+
+type Level = (typeof LEVELS)[number];
 
 const defaultProgress: UserProgress = {
-  rating: 800,
+  rating: 600,
   solvedPuzzles: new Set<string>(),
   currentStreak: 0,
   bestStreak: 0,
   totalSolved: 0,
+  currentLevel: "iniciante_1",
+  currentPuzzleIndex: 0,
 };
 
 class PuzzleService {
   private userProgress: UserProgress;
+  private puzzleData: Record<Level, PuzzleLevel>;
 
   constructor(initialProgress: UserProgress = defaultProgress) {
     this.userProgress = initialProgress;
+    this.puzzleData = puzzlesData as Record<Level, PuzzleLevel>;
+  }
+
+  private findAppropriateLevel(rating: number): Level {
+    for (const level of LEVELS) {
+      const levelInfo = this.puzzleData[level].info;
+      if (rating >= levelInfo.rating_min && rating < levelInfo.rating_max) {
+        return level;
+      }
+    }
+    return rating <= 400 ? "iniciante_1" : "avancado_3";
   }
 
   public getNextPuzzle(): Puzzle | null {
-    const unsolvedPuzzles = puzzles.filter(
-      (puzzle) => !this.userProgress.solvedPuzzles.has(puzzle.id)
+    // Atualiza o nível se necessário
+    const appropriateLevel = this.findAppropriateLevel(
+      this.userProgress.rating
     );
+    if (appropriateLevel !== this.userProgress.currentLevel) {
+      this.userProgress.currentLevel = appropriateLevel;
+      this.userProgress.currentPuzzleIndex = 0;
+    }
 
-    if (unsolvedPuzzles.length === 0) return null;
+    const currentLevelData = this.puzzleData[this.userProgress.currentLevel];
+    const puzzles = currentLevelData.puzzles;
 
-    unsolvedPuzzles.sort(
-      (a, b) =>
-        Math.abs(a.rating - this.userProgress.rating) -
-        Math.abs(b.rating - this.userProgress.rating)
-    );
+    // Encontra o próximo puzzle não resolvido e válido
+    while (this.userProgress.currentPuzzleIndex < puzzles.length) {
+      const puzzle = puzzles[this.userProgress.currentPuzzleIndex];
 
-    return unsolvedPuzzles[0];
+      if (!this.userProgress.solvedPuzzles.has(puzzle.PuzzleId)) {
+        // Verifica se a posição inicial é legal
+        const game = new ChessGame();
+        game.loadPosition(puzzle.FEN);
+
+        if (game.isPositionLegal()) {
+          return puzzle;
+        }
+      }
+
+      this.userProgress.currentPuzzleIndex++;
+    }
+
+    // Se chegou ao fim dos puzzles deste nível
+    if (this.userProgress.currentPuzzleIndex >= puzzles.length) {
+      // Tenta avançar para o próximo nível
+      const currentLevelIndex = LEVELS.indexOf(this.userProgress.currentLevel);
+      if (currentLevelIndex < LEVELS.length - 1) {
+        this.userProgress.currentLevel = LEVELS[currentLevelIndex + 1];
+        this.userProgress.currentPuzzleIndex = 0;
+        return this.getNextPuzzle();
+      }
+      return null;
+    }
+
+    return null;
   }
 
   public submitPuzzleSolution(puzzleId: string, moves: string[]): boolean {
-    const puzzle = puzzles.find((p) => p.id === puzzleId);
-    if (!puzzle) return false;
+    const currentLevelData = this.puzzleData[this.userProgress.currentLevel];
+    const puzzle =
+      currentLevelData.puzzles[this.userProgress.currentPuzzleIndex];
 
-    const isCorrect = this.areMovesSame(moves, puzzle.moves);
+    if (!puzzle || puzzle.PuzzleId !== puzzleId) return false;
+
+    const isCorrect = this.areMovesSame(moves, puzzle.Moves.split(" "));
 
     if (isCorrect) {
       this.userProgress.solvedPuzzles.add(puzzleId);
@@ -93,10 +140,11 @@ class PuzzleService {
         this.userProgress.currentStreak
       );
 
-      const ratingDiff = puzzle.rating - this.userProgress.rating;
+      const ratingDiff = puzzle.Rating - this.userProgress.rating;
       this.userProgress.rating += Math.floor(ratingDiff * 0.1) + 10;
     } else {
       this.userProgress.currentStreak = 0;
+      this.userProgress.rating = Math.max(400, this.userProgress.rating - 5);
     }
 
     return isCorrect;
@@ -112,6 +160,10 @@ class PuzzleService {
       ...this.userProgress,
       solvedPuzzles: new Set(this.userProgress.solvedPuzzles),
     };
+  }
+
+  public getCurrentLevelInfo(): LevelInfo {
+    return this.puzzleData[this.userProgress.currentLevel].info;
   }
 
   public resetProgress(): void {
@@ -142,7 +194,6 @@ export function usePuzzleService() {
     setService(puzzleService);
 
     return () => {
-      // Salvar progresso ao desmontar
       if (puzzleService) {
         const progress = puzzleService.getUserProgress();
         localStorage.setItem(
@@ -158,5 +209,3 @@ export function usePuzzleService() {
 
   return service;
 }
-
-export type { Puzzle, UserProgress };

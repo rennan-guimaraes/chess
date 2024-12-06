@@ -17,11 +17,19 @@ function PuzzleProgress({
   streak,
   bestStreak,
   totalSolved,
+  currentLevel,
+  levelInfo,
 }: {
   rating: number;
   streak: number;
   bestStreak: number;
   totalSolved: number;
+  currentLevel: string;
+  levelInfo: {
+    rating_min: number;
+    rating_max: number;
+    total_puzzles: number;
+  };
 }) {
   return (
     <Card>
@@ -31,8 +39,20 @@ function PuzzleProgress({
       <CardContent className="p-4 pt-2">
         <div className="space-y-2">
           <div className="flex justify-between">
+            <span className="text-muted-foreground">Nível:</span>
+            <span className="font-bold">
+              {currentLevel.replace("_", " ").toUpperCase()}
+            </span>
+          </div>
+          <div className="flex justify-between">
             <span className="text-muted-foreground">Rating:</span>
             <span className="font-bold">{rating}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Faixa do Nível:</span>
+            <span className="font-bold">
+              {levelInfo.rating_min} - {levelInfo.rating_max}
+            </span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Sequência Atual:</span>
@@ -66,9 +86,9 @@ function PuzzleInfo({ puzzle }: { puzzle: Puzzle }) {
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Rating:</span>
-            <span className="font-medium">{puzzle.rating}</span>
+            <span className="font-medium">{puzzle.Rating}</span>
           </div>
-          <p className="text-sm mt-2">{puzzle.description}</p>
+          <p className="text-sm mt-2">{puzzle.Description}</p>
         </div>
       </CardContent>
     </Card>
@@ -76,11 +96,13 @@ function PuzzleInfo({ puzzle }: { puzzle: Puzzle }) {
 }
 
 const defaultProgress: UserProgress = {
-  rating: 800,
+  rating: 600,
   solvedPuzzles: new Set<string>(),
   currentStreak: 0,
   bestStreak: 0,
   totalSolved: 0,
+  currentLevel: "iniciante_1",
+  currentPuzzleIndex: 0,
 };
 
 export default function PuzzlesPage() {
@@ -95,89 +117,117 @@ export default function PuzzlesPage() {
     text: string;
     type: "success" | "error";
   } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [levelInfo, setLevelInfo] = useState({
+    rating_min: 0,
+    rating_max: 0,
+    total_puzzles: 0,
+  });
+  const [, setLastMoveCorrect] = useState<boolean | null>(null);
 
   const puzzleService = usePuzzleService();
 
   useEffect(() => {
     if (puzzleService) {
       setUserProgress(puzzleService.getUserProgress());
+      setLevelInfo(puzzleService.getCurrentLevelInfo());
       loadNextPuzzle();
     }
   }, [puzzleService]);
 
-  const loadNextPuzzle = useCallback(() => {
+  const loadNextPuzzle = useCallback(async () => {
     if (!puzzleService) return;
 
-    const puzzle = puzzleService.getNextPuzzle();
-    if (puzzle) {
-      game.reset();
-      game.loadPosition(puzzle.fen);
-      setCurrentPuzzle(puzzle);
-      setUserMoves([]);
-      setFen(game.fen());
-      setGameState(game.getGameState());
-      setMessage(null);
-    } else {
+    setIsLoading(true);
+    setLastMoveCorrect(null);
+    try {
+      const puzzle = puzzleService.getNextPuzzle();
+      if (puzzle) {
+        game.reset();
+        game.loadPosition(puzzle.FEN);
+        setCurrentPuzzle(puzzle);
+        setUserMoves([]);
+        setFen(game.fen());
+        setGameState(game.getGameState());
+        setMessage(null);
+        setLevelInfo(puzzleService.getCurrentLevelInfo());
+      } else {
+        setMessage({
+          text: "Parabéns! Você completou todos os puzzles disponíveis!",
+          type: "success",
+        });
+      }
+    } catch (error) {
+      console.error(error);
       setMessage({
-        text: "Parabéns! Você completou todos os puzzles disponíveis!",
-        type: "success",
+        text: "Erro ao carregar o próximo puzzle. Tente novamente.",
+        type: "error",
       });
+    } finally {
+      setIsLoading(false);
     }
   }, [game, puzzleService]);
 
   const handlePieceDrop = useCallback(
     (sourceSquare: string, targetSquare: string) => {
-      if (!currentPuzzle || !puzzleService) return false;
+      if (!currentPuzzle || !puzzleService || isLoading) return false;
 
-      const moveSuccess = game.move({
+      const moveResult = game.move({
         from: sourceSquare as Square,
         to: targetSquare as Square,
         promotion: "q",
       });
 
-      if (moveSuccess) {
+      if (moveResult) {
         const newMoves = [...userMoves, `${sourceSquare}${targetSquare}`];
         setUserMoves(newMoves);
         setFen(game.fen());
         setGameState(game.getGameState());
 
-        if (newMoves.length === currentPuzzle.moves.length) {
-          const isCorrect = puzzleService.submitPuzzleSolution(
-            currentPuzzle.id,
-            newMoves
-          );
+        const isCorrect = puzzleService.submitPuzzleSolution(
+          currentPuzzle.PuzzleId,
+          newMoves
+        );
 
-          if (isCorrect) {
+        setLastMoveCorrect(isCorrect);
+
+        if (isCorrect) {
+          setTimeout(() => {
             setMessage({
               text: "Correto! Carregando próximo puzzle...",
               type: "success",
             });
             setUserProgress(puzzleService.getUserProgress());
-            setTimeout(loadNextPuzzle, 2000);
-          } else {
+            setTimeout(() => {
+              loadNextPuzzle();
+            }, 1500);
+          }, 500);
+        } else {
+          setTimeout(() => {
             setMessage({
               text: "Incorreto. Tente novamente!",
               type: "error",
             });
             setTimeout(() => {
-              game.loadPosition(currentPuzzle.fen);
+              game.loadPosition(currentPuzzle.FEN);
               setUserMoves([]);
               setFen(game.fen());
               setGameState(game.getGameState());
               setMessage(null);
-            }, 2000);
-          }
+              setLastMoveCorrect(null);
+            }, 1500);
+          }, 500);
         }
 
         return true;
       }
       return false;
     },
-    [game, currentPuzzle, userMoves, loadNextPuzzle, puzzleService]
+    [game, currentPuzzle, userMoves, loadNextPuzzle, puzzleService, isLoading]
   );
 
   if (!puzzleService) {
-    return <div>Carregando...</div>;
+    return <div>Carregando serviço de puzzles...</div>;
   }
 
   return (
@@ -199,37 +249,46 @@ export default function PuzzlesPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-3 gap-4 min-h-0 overflow-hidden">
-          <div className="flex flex-col gap-4 col-span-2">
-            <div className="grid grid-cols-3 gap-4">
-              <div className="col-span-2 w-full">
-                <ChessBoard fen={fen} onPieceDrop={handlePieceDrop} />
-              </div>
-              <div className="flex flex-col gap-4 col-span-1 h-full">
-                <PuzzleProgress
-                  rating={userProgress.rating}
-                  streak={userProgress.currentStreak}
-                  bestStreak={userProgress.bestStreak}
-                  totalSolved={userProgress.totalSolved}
-                />
-                {currentPuzzle && <PuzzleInfo puzzle={currentPuzzle} />}
+        {isLoading ? (
+          <div className="flex justify-center items-center h-64">
+            <p className="text-lg">Carregando puzzle...</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-3 gap-4 min-h-0 overflow-hidden">
+            <div className="flex flex-col gap-4 col-span-2">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="col-span-2 w-full">
+                  <ChessBoard
+                    fen={fen}
+                    onPieceDrop={handlePieceDrop}
+                    orientation={
+                      currentPuzzle && currentPuzzle.FEN.split(" ")[1] === "w"
+                        ? "white"
+                        : "black"
+                    }
+                  />
+                </div>
+                <div className="flex flex-col gap-4 col-span-1 h-full">
+                  <PuzzleProgress
+                    rating={userProgress.rating}
+                    streak={userProgress.currentStreak}
+                    bestStreak={userProgress.bestStreak}
+                    totalSolved={userProgress.totalSolved}
+                    currentLevel={userProgress.currentLevel}
+                    levelInfo={levelInfo}
+                  />
+                  {currentPuzzle && <PuzzleInfo puzzle={currentPuzzle} />}
+                </div>
               </div>
             </div>
-          </div>
 
-          <Card className="col-span-1">
-            <CardHeader>
-              <CardTitle>Histórico de Movimentos</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <MoveHistory
-                moves={gameState.moveHistory}
-                currentMoveIndex={gameState.currentMoveIndex}
-                onMoveSelect={() => {}}
-              />
-            </CardContent>
-          </Card>
-        </div>
+            <MoveHistory
+              moves={gameState.moveHistory}
+              currentMoveIndex={gameState.currentMoveIndex}
+              onMoveSelect={() => {}}
+            />
+          </div>
+        )}
       </div>
     </main>
   );

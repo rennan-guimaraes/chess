@@ -152,6 +152,10 @@ class ChessGame {
   public getTotalMoves(): number {
     return this.moveHistory.length;
   }
+
+  public isPositionLegal(): boolean {
+    return !this.game.isCheck();
+  }
 }
 
 export default ChessGame;

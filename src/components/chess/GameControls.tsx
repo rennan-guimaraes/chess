@@ -13,7 +13,6 @@ interface GameControlsProps {
 
 export function GameControls({
   onReset,
-  onComputerMove,
   difficulty,
   onDifficultyChange,
   isComputerEnabled,
