@@ -36,9 +36,15 @@ class ChessGame {
     this.positionHistory = [this.game.fen()];
   }
 
-  public move(moveDetails: ChessMove): boolean {
+  public move(
+    moveDetails: ChessMove | string
+  ): { from: string; to: string; san: string } | false {
     try {
-      const move = this.game.move(moveDetails);
+      const move =
+        typeof moveDetails === "string"
+          ? this.game.move(moveDetails)
+          : this.game.move(moveDetails);
+
       if (move) {
         // Limpar histórico futuro se estivermos fazendo um novo movimento a partir de uma posição anterior
         if (this.currentMoveIndex < this.moveHistory.length - 1) {
@@ -60,7 +66,12 @@ class ChessGame {
           const color = move.color === "w" ? "white" : "black";
           this.capturedPieces[color].push(move.captured);
         }
-        return true;
+
+        return {
+          from: move.from,
+          to: move.to,
+          san: move.san,
+        };
       }
       return false;
     } catch {
